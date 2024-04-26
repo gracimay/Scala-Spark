@@ -1,0 +1,173 @@
+Scala Spark RDD
+
+Create an RDD
+
+// in Scala
+val myCollection = "This is an example".split(" ")
+
+val censusLines = sc.textFile("location/censusData.txt")
+val censusSplit = censusLines.map(_.split(", "))
+
+
+//inspect RDD
+myCollection.first()
+
+
+//create two partitions
+val words = spark.sparkContext.parallelize(myCollection, 2)
+
+//Option 2 (From Lab 5)
+// During the initialization process a Spark context was created for us and made available in the variable sc.
+//We can use sc to create a new Spark RDD from data 
+
+val words = sc.parallelize(myCollection)
+
+//Gather the RDD into an Array
+
+val returnedArray = words.collect
+
+//Manipulating values in an Array
+
+val tenNumbers = sc.parallelize(1 to 10)
+
+//MAP Multiplies all values in the RDD by 5
+val largeNumbers = tenNumbers.map( _ * 5)
+
+//MAP get just two columns from an ARRAY
+val columnoneColumnTwo = RDD.map(r => (r(1), r(2)))
+
+//MAP get just two columns from a TUPLE
+val columnoneColumnTwo = RDD.map(r => (r_.1, r_.2))
+
+//FILTER values (remove values greater than 5)
+val filterNumbers = tenNumbers.filter(_ > 5)
+
+//Action commands
+
+//TAKE Get the first 10 numbers in the RDD
+tenNumbers.take(10)
+
+//COLLECT
+//COUNT
+//REDUCE
+//LOOKUP
+
+//SAVEASTEXTFILE
+
+tenNumbers.saveAsTestFile("location")
+
+
+//MATH.SQRT - Get the square root of a number
+
+val result = tenNumbers.map(math.sqrt(_))
+
+//SUM - sum all numbers in an RDD
+
+val result = tenNumbers.sum()
+
+//MAX - get the max value from an RDD
+
+val result = tenNumbers.reduce((x, y) => math.max(x, y))
+val result = tenNumbers.max()
+
+// Get the Max value for each Key
+
+val result = tenNumberWithKey.reduceByKey(math.max) 
+
+//REDUCEBYKEY
+// performs a reduction by key, summing up the values for each key
+val animalAges = sc.parallelize(List(("cat", 7), ("dog", 5),
+  ("monkey", 3), ("cat", 6), ("dog", 10), ("bird", 1), ("bird",1)))
+
+val result = animalAges.reduceByKey(_ + _)
+(cat, 13), (dog, 15), (monkey, 3), (bird, 2)
+
+//GROUPBYKEY
+// groups the values for each key into an iterable without performing any aggregation
+
+val result = animalAges.groupByKey()
+(cat, (7, 6)), (dog, (5, 10)), (monkey, 3), (bird, (1, 1))
+
+
+//JOIN
+val animalLegs = sc.parallelize(List(("monkey", 2), ("dog", 4),
+  ("cat", 4), ("bird", 2)))
+
+val AnimalAgesLegs = animalAges.join(animalLegs)
+AnimalAgesLegs.collect
+
+("cat", (7, 4))
+("cat", (6, 4))
+("dog", (5, 4))
+("dog", (10, 4))
+("monkey", (3, 2))
+("bird", (1, 2))
+("bird", (1, 2))
+
+//SORTBY
+//sort by the second attribute and sort ascending (true = ascending, false = descending)
+
+val sortedAnimals = animalAges.sortBy(_._2, true)
+val sortedAnimalsAgesLegs = AnimalAgesLegs.sortBy(_._2._2, true) //(indicating the second element of the tuple inside the value tuple)
+
+
+
+
+//Examples
+
+//Example 1
+val people = sc.parallelize(Array(
+  ("Jane", "student", 1000),
+  ("Peter", "doctor", 100000), 
+  ("Mary", "doctor", 200000),
+  ("Michael", "student", 1000)))
+
+Sum total salary for each occupation then report the output in ascending order according to occupation
+Map r1 and r2 only
+Reduce by Key r1
+Sort by r1
+
+val result = people.map(r => r._2, r._3).reduceByKey(_._).sortBy(_._2, true)
+result.collect
+
+//Example 2
+Take two columns country and Age, filter to remove any records with missing data and count the number of rows
+
+val countryAge = censusSplit.map(r => (r(13), r(0).toInt)).filter(_._1 != "?")
+val countryAgeCount = countryAge.count() 
+
+//Example 3
+
+Get only distinct records, then return only the highest Age for each Country
+val countryAgeDistinct = countryAge.distinct.reduceByKey(math.max)
+
+//Example 4
+Get only the top 7 countries who have the oldest people
+
+val countrysWithOldest = countryAgeDistinct.sortBy(_._2, false).take(7)
+
+//Example 5
+//select country, education, occupation, sex
+
+val allPeople = censusSplit.map(r => (r(13), r(3), r(6), r(9)))
+
+allPeople.take(5) //get 5 rows of data
+
+//remove all people whos occupation is "?"
+val filteredPeople = allPeople.filter(_._3 != "?")
+filteredPeople.count()
+
+//filter canadians and americans
+val canadians = filteredPeople.filter(_._1 == "Canada")
+val americans = filteredPeople.filter(_._1 == "United-States")
+
+//create pairs where canadians and americans have the same occupation
+
+val repCandidates = canadians.map(r => (r._3, r)).join(americans.map(r => (r._3, r)))
+
+//filter only Doctorate for eduction
+
+val includingDoctorate = repCandidates.filter(_._2._2 == "Doctorate") //check if this works
+val includingDoctorate = repCandidates.filter(r._2._2 == "Doctorate")
+
+
